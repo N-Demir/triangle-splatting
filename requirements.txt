@@ -1,5 +1,5 @@
-torch==2.4.0
-torchvision==0.19.0
+torch==2.4.1
+torchvision==0.19.1
 tqdm
 plyfile
 open3d
