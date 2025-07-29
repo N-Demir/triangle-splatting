@@ -47,7 +47,7 @@ app = modal.App("triangle-splatting", image=modal.Image.from_dockerfile(Path(__f
     .run_commands("cd submodules/simple-knn && pip install .")
     # # Install current repo in editable mode
     # # # Post install, try actually running a demo example to prebuild/download things
-    .run_function(dummy_function, secrets=MODAL_SECRETS, volumes=MODAL_VOLUMES, gpu="T4")
+    # .run_function(dummy_function, secrets=MODAL_SECRETS, volumes=MODAL_VOLUMES, gpu="T4")
     # Get the latest code
     .run_commands("git pull", force_build=True)
 )
@@ -120,7 +120,7 @@ def run_shell_script(shell_file_path: str):
 def run(capture_name: str):
     data_volume.reload()
     print(f"Running triangle-splatting on {capture_name}")
-    subprocess.run(f"", shell=True)
+    subprocess.run(f"python train.py -s ~/data/{capture_name} -m ~/output/{capture_name}_triangle_splatting/ --eval", shell=True)
     data_volume.commit()
 
 
