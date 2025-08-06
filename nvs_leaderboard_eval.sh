@@ -9,7 +9,7 @@ fi
 
 scene=$1
 
-method="gaussian-splatting"
+method="triangle-splatting"
 expected_output_folder="/nvs-leaderboard-output/$scene/$method/renders_test"
 
 # Remove the output folder if it already exists
@@ -19,7 +19,6 @@ rm -rf /nvs-leaderboard-output/$scene/$method
 start_time=$(date +%s)
 
 ######## START OF YOUR CODE ########
-# TODO: Add an example
 # Train using the train split in the dataset folder
 # eg: python train.py --data /nvs-leaderboard-data/$scene/train --output /nvs-leaderboard-output/$scene/$method/
 
@@ -29,6 +28,8 @@ python train.py -s /nvs-leaderboard-data/$scene/train -m /nvs-leaderboard-output
 python render.py -s /nvs-leaderboard-data/$scene/test -m /nvs-leaderboard-output/$scene/$method/
 
 # At the end, move your renders into the `expected_output_folder`
+# Note: we move them out of the "train" output folder because that's what the gausian splatting pipeline thinks the "test" split is
+# during the rendering step.
 mv /nvs-leaderboard-output/$scene/$method/train/ours_$iterations/renders $expected_output_folder
 ######## END OF YOUR CODE ########
 
