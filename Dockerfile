@@ -1,31 +1,25 @@
-# Build this with 
-# docker build -t vggt-test .
-
-# Run docker container with
-# docker run -it --gpus all vggt-test /bin/bash
-
-# Then when ready to build and push to remote
-# docker build -t gcr.io/tour-project-442218/vggt . && docker push gcr.io/tour-project-442218/vggt
-# Then to run it
-# docker run -it --gpus all gcr.io/tour-project-442218/vggt /bin/bash
-
-# Once inside run
-# gcloud storage rsync -r gs://tour_storage/data/tandt data/tandt
-# TODO: Fill out the needed command
-# gcloud storage rsync -r data/tandt/truck gs://tour_storage/data/tandt/truck
+# TODO: Add an example
+###### How to edit this file ######
+# Docker and Dockerfiles are quite simple:
+# - a dockerfile is the set of instructions for getting a fresh machine ready to run your code
+# - start by defining a base image (FROM ...) based on the cuda and torch version you want. This gets the hard gpu driver stuff out of the way
+# - set env vars with ENV ..., change directories with WORKDIR ..., and run commands with RUN ...
+# - avoid using conda installs (just replace them with pip installs) because getting conda initialized in docker is a pain
+# 
+# Beam will handle building the docker image from this file, but you can also build it yourself and run it wherever you want
 
 FROM pytorch/pytorch:2.4.1-cuda12.4-cudnn9-devel
 
-# Set environment variables to avoid interactive prompts
+# Set Torch CUDA Compatbility to be for RTX 4090, T4, and A100
+# If using a different GPU, make sure its torch cuda architecture version is added to the list
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.9;9.0"
+
+# Install git and various other helper dependencies
+# Set environment variable to avoid interactive prompts from installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/New_York
-
-# Install git
-RUN apt-get update && apt-get install -y curl gnupg && \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
-    apt-get update && apt-get install -y \
-    google-cloud-cli \
+RUN apt-get update && apt-get install -y \
+    openssh-server \
     git \
     wget \
     unzip \
@@ -42,5 +36,26 @@ RUN apt-get update && apt-get install -y curl gnupg && \
     libavcodec-dev \
     libeigen3-dev \
     libxxf86vm-dev \
-    tmux \
     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root/workspace
+
+###### Method Installation ######
+# Probably easiest to pull the repo from github, but you can also copy files from your local machine with COPY 
+# eg: COPY . .
+RUN git clone https://github.com/N-Demir/triangle-splatting.git . --recursive
+
+# Install (avoid conda installs because they don't work well in dockerfile situations)
+# Separating these on separate lines helps if there are errors (previous lines will be cached) especially on the large package installs
+# eg:
+RUN pip install torchvision==0.19.1
+RUN pip install tqdm
+RUN pip install plyfile
+RUN pip install open3d
+RUN pip install lpips
+RUN pip install mediapy
+RUN pip install opencv-python
+RUN bash compile.sh
+RUN cd submodules/simple-knn && pip install .
+
+# Note: If your install needs access to a gpu it's actually possible to do that through Beam's python sdk. Check their docs or reach out!
