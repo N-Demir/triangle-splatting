@@ -17,3 +17,9 @@ output_folder=$2
 #   python render.py --data $data_folder/test --output $output_folder --eval
 # 3) Move the renders into `$output_folder/test_renders`
 #   mv $output_folder/test/ours_30000/renders $output_folder/test_renders
+
+iterations=10
+
+python train.py -s $data_folder -m $output_folder --eval --iterations $iterations
+python render.py -s $data_folder -m $output_folder --eval --iterations $iterations
+mv $output_folder/test/ours_$iterations/renders $output_folder/test_renders

@@ -86,4 +86,22 @@ image = (
     # .run_commands("pip install submodules/diff-gaussian-rasterization")
     # .run_commands("pip install -e .")
     # Note: If your run_commands step needs access to a gpu it's actually possible to do that through "run_commands(gpu='L40S', ...)"
+    .run_commands(
+        "git clone https://github.com/N-Demir/triangle-splatting.git . --recursive",
+    )
+    .run_commands(
+        "pip install torchvision==0.19.1",
+        "pip install tqdm",
+        "pip install plyfile",
+        "pip install open3d",
+        "pip install lpips",
+        "pip install mediapy",
+        "pip install opencv-python",
+    )
+    .run_commands(
+        "bash compile.sh",
+    )
+    .run_commands(
+        "cd submodules/simple-knn && pip install .",
+    )
 )
