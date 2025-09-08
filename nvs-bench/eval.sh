@@ -21,5 +21,5 @@ output_folder=$2
 iterations=10
 
 python train.py -s $data_folder -m $output_folder --eval --iterations $iterations
-python render.py -s $data_folder -m $output_folder --eval --iterations $iterations
+python render.py -s $data_folder -m $output_folder --eval --iteration $iterations
 mv $output_folder/test/ours_$iterations/renders $output_folder/test_renders
