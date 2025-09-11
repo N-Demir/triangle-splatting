@@ -682,7 +682,13 @@ class TriangleModel:
         probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
         probs = torch.clamp(probs, min=0.0)
         probs = probs / (probs.sum() + torch.finfo(torch.float32).eps)
-        sampled_idxs = torch.multinomial(probs, min(num, (probs>0).sum().item()), replacement=False)
+        
+        # Safety check: if all probabilities are zero, return empty tensor
+        num_positive_probs = (probs > 0).sum().item()
+        if num_positive_probs == 0:
+            return torch.empty(0, dtype=torch.long, device=probs.device)
+            
+        sampled_idxs = torch.multinomial(probs, min(num, num_positive_probs), replacement=False)
 
         if alive_indices is not None:
             sampled_idxs = alive_indices[sampled_idxs]
@@ -746,6 +752,10 @@ class TriangleModel:
         big_mask   = compar > self.split_size
 
         add_idx = self._sample_alives(probs=probs, num=num_gs, big_mask=big_mask)
+
+        # If no indices were sampled, return early
+        if add_idx.shape[0] == 0:
+            return 0
 
         big_mask   = compar[add_idx] > self.split_size
         small_mask = ~big_mask
