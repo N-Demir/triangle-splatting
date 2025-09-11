@@ -755,6 +755,7 @@ class TriangleModel:
 
         # If no indices were sampled, return early
         if add_idx.shape[0] == 0:
+            print("WARNING: No indices sampled for new Gaussians! This should not be happening... See for more info: https://github.com/trianglesplatting/triangle-splatting/issues/11#issuecomment-3281961127")
             return 0
 
         big_mask   = compar[add_idx] > self.split_size
@@ -810,8 +811,7 @@ class TriangleModel:
 
         mask = torch.zeros(self._opacity.shape[0], dtype=torch.bool)
         mask[add_idx] = True
-        if dead_mask is not None:
-            mask[torch.nonzero(dead_mask, as_tuple=True)] = True
+        mask[torch.nonzero(dead_mask, as_tuple=True)] = True
         self.prune_points(mask)
 
         self.triangle_area = torch.zeros((self.get_triangles_points.shape[0]), device="cuda")
