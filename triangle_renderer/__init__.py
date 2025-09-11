@@ -97,19 +97,77 @@ def render(viewpoint_camera, pc : TriangleModel, pipe, bg_color : torch.Tensor, 
     opacity = opacity * mask
 
     # Rasterize visible triangles to image, obtain their radii (on screen). 
-    rendered_image, radii, scaling, density_factor, allmap, max_blending  = rasterizer(
-        triangles_points=triangles_points,
-        sigma=sigma,
-        num_points_per_triangle = num_points_per_triangle,
-        cumsum_of_points_per_triangle = cumsum_of_points_per_triangle,
-        number_of_points = number_of_points,
-        shs = shs,
-        colors_precomp = colors_precomp,
-        opacities = opacity,
-        means2D = means2D,
-        scaling = scaling,
-        density_factor = density_factor
-       )
+    try: 
+        rendered_image, radii, scaling, density_factor, allmap, max_blending  = rasterizer(
+            triangles_points=triangles_points,
+            sigma=sigma,
+            num_points_per_triangle = num_points_per_triangle,
+            cumsum_of_points_per_triangle = cumsum_of_points_per_triangle,
+            number_of_points = number_of_points,
+            shs = shs,
+            colors_precomp = colors_precomp,
+            opacities = opacity,
+            means2D = means2D,
+            scaling = scaling,
+            density_factor = density_factor
+        )
+    except Exception as e:
+        print(f"Rasterizer Error: {e}")
+        print("=== RASTERIZER DIAGNOSIS ===")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print()
+        print("=== TENSOR SHAPES AND SIZES ===")
+        print(f"triangles_points.shape: {triangles_points.shape}")
+        print(f"triangles_points.size(0): {triangles_points.shape[0] if len(triangles_points.shape) > 0 else 'N/A'}")
+        print(f"sigma.shape: {sigma.shape}")
+        print(f"sigma.size(0): {sigma.shape[0] if len(sigma.shape) > 0 else 'N/A'}")
+        print(f"opacity.shape: {opacity.shape}")
+        print(f"opacity.size(0): {opacity.shape[0] if len(opacity.shape) > 0 else 'N/A'}")
+        print(f"num_points_per_triangle.shape: {num_points_per_triangle.shape}")
+        print(f"cumsum_of_points_per_triangle.shape: {cumsum_of_points_per_triangle.shape}")
+        print(f"number_of_points: {number_of_points}")
+        print(f"means2D.shape: {means2D.shape}")
+        print(f"scaling.shape: {scaling.shape}")
+        print(f"density_factor.shape: {density_factor.shape}")
+        print()
+        print("=== TENSOR VALUES (first few elements) ===")
+        print(f"triangles_points[0:3]: {triangles_points[0:3] if triangles_points.shape[0] > 0 else 'EMPTY'}")
+        print(f"sigma[0:3]: {sigma[0:3] if sigma.shape[0] > 0 else 'EMPTY'}")
+        print(f"opacity[0:3]: {opacity[0:3] if opacity.shape[0] > 0 else 'EMPTY'}")
+        print(f"num_points_per_triangle[0:3]: {num_points_per_triangle[0:3] if num_points_per_triangle.shape[0] > 0 else 'EMPTY'}")
+        print()
+        print("=== CAMERA INFO ===")
+        print(f"Camera image_height: {viewpoint_camera.image_height}")
+        print(f"Camera image_width: {viewpoint_camera.image_width}")
+        print(f"Camera FoVx: {viewpoint_camera.FoVx}")
+        print(f"Camera FoVy: {viewpoint_camera.FoVy}")
+        print()
+        print("=== MODEL STATE ===")
+        print(f"Model total triangles: {pc.get_triangles_points.shape[0]}")
+        print(f"Model total opacity: {pc.get_opacity.shape[0]}")
+        print(f"Model total sigma: {pc.get_sigma.shape[0]}")
+        print()
+        print("=== RASTERIZER SETTINGS ===")
+        print(f"Rasterizer image_height: {raster_settings.image_height}")
+        print(f"Rasterizer image_width: {raster_settings.image_width}")
+        print(f"Rasterizer tanfovx: {raster_settings.tanfovx}")
+        print(f"Rasterizer tanfovy: {raster_settings.tanfovy}")
+        print("=== END DIAGNOSIS ===")
+        print()
+        
+        # Return empty render to prevent crash
+        height, width = viewpoint_camera.image_height, viewpoint_camera.image_width
+        empty_render = torch.zeros((3, height, width), device="cuda", dtype=torch.float32)
+        return {
+            "render": empty_render,
+            "viewspace_points": screenspace_points,
+            "visibility_filter": torch.zeros(opacity.shape[0], dtype=torch.bool, device="cuda") if opacity.shape[0] > 0 else torch.zeros(1, dtype=torch.bool, device="cuda"),
+            "radii": torch.zeros(opacity.shape[0], device="cuda") if opacity.shape[0] > 0 else torch.zeros(1, device="cuda"),
+            "scaling": scaling,
+            "density_factor": density_factor,
+            "max_blending": torch.zeros((height, width), device="cuda")
+        }
 
     rets =  {"render": rendered_image,
             "viewspace_points": screenspace_points,

@@ -753,21 +753,9 @@ class TriangleModel:
 
         add_idx = self._sample_alives(probs=probs, num=num_gs, big_mask=big_mask)
 
-        # If no indices were sampled, try uniform sampling from non-dead indices
+        # If no indices were sampled, return early
         if add_idx.shape[0] == 0:
-            # Get indices that are not dead
-            alive_indices = torch.where(~dead_mask)[0]
-            if alive_indices.shape[0] == 0:
-                # If all indices are dead, sample uniformly from all indices
-                alive_indices = torch.arange(self._opacity.shape[0], device=dead_mask.device)
-            
-            # Sample uniformly from alive indices
-            num_to_sample = min(num_gs, alive_indices.shape[0])
-            if num_to_sample > 0:
-                sampled_indices = torch.randperm(alive_indices.shape[0], device=alive_indices.device)[:num_to_sample]
-                add_idx = alive_indices[sampled_indices]
-            else:
-                return 0
+            return 0
 
         big_mask   = compar[add_idx] > self.split_size
         small_mask = ~big_mask
@@ -822,7 +810,8 @@ class TriangleModel:
 
         mask = torch.zeros(self._opacity.shape[0], dtype=torch.bool)
         mask[add_idx] = True
-        mask[torch.nonzero(dead_mask, as_tuple=True)] = True
+        if dead_mask is not None:
+            mask[torch.nonzero(dead_mask, as_tuple=True)] = True
         self.prune_points(mask)
 
         self.triangle_area = torch.zeros((self.get_triangles_points.shape[0]), device="cuda")
