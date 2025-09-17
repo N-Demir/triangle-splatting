@@ -73,15 +73,16 @@ fi
 
 # Define outdoor scenes
 outdoor_scenes=("bicycle" "flowers" "garden" "stump" "treehill" "truck" "train")
+indoor_scenes=("room" "counter" "kitchen" "bonsai" "playroom" "drjohnson" "nyc" "london" "alameda" "berlin")
 
 if [[ " ${outdoor_scenes[*]} " =~ " ${scene_name} " ]]; then # check if scene is in outdoor_scenes
-    outdoor_flag="--outdoor"
-else
-    outdoor_flag=""
+    indoor_outdoor_flags="--outdoor"
+elif [[ " ${indoor_scenes[*]} " =~ " ${scene_name} " ]]; then # check if scene is in indoor_scenes
+    indoor_outdoor_flags="--importance_threshold 0.025 --lr_sigma 0.0008 --opacity_lr 0.014 --lambda_normals 0.00004 --lambda_dist 1 --iteration_mesh 5000 --lambda_opacity 0.0055 --lambda_dssim 0.4 --lr_triangles_points_init 0.0015 --lambda_size 5e-8"
 fi
 
 
-python train.py -s $data_folder -m $output_folder --eval --iterations $iterations --max_shapes $cap_max --quiet --eval --test_iterations -1 $outdoor_flag
+python train.py -s $data_folder -m $output_folder --eval --iterations $iterations --max_shapes $cap_max --quiet --eval --test_iterations -1 $indoor_outdoor_flags
 python render.py -s $data_folder -m $output_folder --eval --iteration $iterations --quiet --eval --skip_train
 cp -r $output_folder/test/ours_$iterations/renders $output_folder/test_renders
 
