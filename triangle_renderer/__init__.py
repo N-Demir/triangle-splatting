@@ -109,7 +109,7 @@ def render(viewpoint_camera, pc : TriangleModel, pipe, bg_color : torch.Tensor, 
         means2D = means2D,
         scaling = scaling,
         density_factor = density_factor
-    )
+       )
 
     rets =  {"render": rendered_image,
             "viewspace_points": screenspace_points,
