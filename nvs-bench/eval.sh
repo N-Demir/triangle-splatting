@@ -38,6 +38,52 @@ if [[ $data_folder == *"zipnerf"* ]]; then
     iterations=25000
 fi
 
-python train.py -s $data_folder -m $output_folder --eval --iterations $iterations
-python render.py -s $data_folder -m $output_folder --eval --iteration $iterations
-mv $output_folder/test/ours_$iterations/renders $output_folder/test_renders
+
+## To match `full_eval.py`, we have to define some additional parameters - max_shapes and outdoor
+
+scene_name=$(basename "$data_folder")
+
+# Specify the max number of shapes for each scene
+if [[ "$scene_name" == "bicycle" ]]; then
+    cap_max=6400000
+elif [[ "$scene_name" == "flowers" ]]; then
+    cap_max=5500000
+elif [[ "$scene_name" == "garden" ]]; then
+    cap_max=5200000
+elif [[ "$scene_name" == "stump" ]]; then
+    cap_max=4750000
+elif [[ "$scene_name" == "treehill" ]]; then
+    cap_max=5000000
+elif [[ "$scene_name" == "room" ]]; then
+    cap_max=2100000
+elif [[ "$scene_name" == "counter" ]]; then
+    cap_max=2500000
+elif [[ "$scene_name" == "kitchen" ]]; then
+    cap_max=2400000
+elif [[ "$scene_name" == "bonsai" ]]; then
+    cap_max=3000000
+elif [[ "$scene_name" == "truck" ]]; then
+    cap_max=2000000
+elif [[ "$scene_name" == "train" ]]; then
+    cap_max=2500000
+else
+    echo "Using default cap_max=4000000"
+    cap_max=4000000
+fi
+
+# Define outdoor scenes
+outdoor_scenes=("bicycle" "flowers" "garden" "stump" "treehill" "truck" "train")
+
+if [[ " ${outdoor_scenes[*]} " =~ " ${scene_name} " ]]; then # check if scene is in outdoor_scenes
+    outdoor_flag="--outdoor"
+else
+    outdoor_flag=""
+fi
+
+
+python train.py -s $data_folder -m $output_folder --eval --iterations $iterations --max_shapes $cap_max --quiet --eval --test_iterations -1 $outdoor_flag
+python render.py -s $data_folder -m $output_folder --eval --iteration $iterations --quiet --eval --skip_train
+cp -r $output_folder/test/ours_$iterations/renders $output_folder/test_renders
+
+# As a sanity check, print the method's metrics
+python metrics.py -m $output_folder
