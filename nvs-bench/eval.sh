@@ -39,50 +39,61 @@ if [[ $data_folder == *"zipnerf"* ]]; then
 fi
 
 
-## To match `full_eval.py`, we have to define some additional parameters - max_shapes and outdoor
-
-scene_name=$(basename "$data_folder")
+## To match `full_eval.py` and the bash_scripts, we have to define some additional parameters - max_shapes and indoor_outdoor_flags
 
 # Specify the max number of shapes for each scene
-if [[ "$scene_name" == "bicycle" ]]; then
-    cap_max=6400000
-elif [[ "$scene_name" == "flowers" ]]; then
-    cap_max=5500000
-elif [[ "$scene_name" == "garden" ]]; then
-    cap_max=5200000
-elif [[ "$scene_name" == "stump" ]]; then
-    cap_max=4750000
-elif [[ "$scene_name" == "treehill" ]]; then
-    cap_max=5000000
-elif [[ "$scene_name" == "room" ]]; then
-    cap_max=2100000
-elif [[ "$scene_name" == "counter" ]]; then
-    cap_max=2500000
-elif [[ "$scene_name" == "kitchen" ]]; then
-    cap_max=2400000
-elif [[ "$scene_name" == "bonsai" ]]; then
-    cap_max=3000000
-elif [[ "$scene_name" == "truck" ]]; then
-    cap_max=2000000
-elif [[ "$scene_name" == "train" ]]; then
-    cap_max=2500000
-else
-    echo "Using default cap_max=4000000"
-    cap_max=4000000
-fi
+case "$data_folder" in
+    */mipnerf360/bicycle)
+        max_shapes=6400000
+        ;;
+    */mipnerf360/flowers)
+        max_shapes=5500000
+        ;;
+    */mipnerf360/garden)
+        max_shapes=5200000
+        ;;
+    */mipnerf360/stump)
+        max_shapes=4750000
+        ;;
+    */mipnerf360/treehill)
+        max_shapes=5000000
+        ;;
+    */mipnerf360/room)
+        max_shapes=2100000
+        ;;
+    */mipnerf360/counter)
+        max_shapes=2500000
+        ;;
+    */mipnerf360/kitchen)
+        max_shapes=2400000
+        ;;
+    */mipnerf360/bonsai)
+        max_shapes=3000000
+        ;;
+    */tanksandtemples/truck)
+        max_shapes=2000000
+        ;;
+    */tanksandtemples/train)
+        max_shapes=2500000
+        ;;
+    *)
+        echo "Using default max_shapes=4000000"
+        max_shapes=4000000
+        ;;
+esac
 
-# Define outdoor scenes
-outdoor_scenes=("bicycle" "flowers" "garden" "stump" "treehill" "truck" "train")
-indoor_scenes=("room" "counter" "kitchen" "bonsai" "playroom" "drjohnson" "nyc" "london" "alameda" "berlin")
+# Check if scene is outdoor or indoor
+case "$data_folder" in
+    */mipnerf360/bicycle|*/mipnerf360/flowers|*/mipnerf360/garden|*/mipnerf360/stump|*/mipnerf360/treehill|*/tanksandtemples/truck|*/tanksandtemples/train)
+        indoor_outdoor_flags="--outdoor"
+        ;;
+    */mipnerf360/room|*/mipnerf360/counter|*/mipnerf360/kitchen|*/mipnerf360/bonsai|*/deepblending/playroom|*/deepblending/drjohnson|*/zipnerf/nyc|*/zipnerf/london|*/zipnerf/alameda|*/zipnerf/berlin)
+        indoor_outdoor_flags="--importance_threshold 0.025 --lr_sigma 0.0008 --opacity_lr 0.014 --lambda_normals 0.00004 --lambda_dist 1 --iteration_mesh 5000 --lambda_opacity 0.0055 --lambda_dssim 0.4 --lr_triangles_points_init 0.0015 --lambda_size 5e-8"
+        ;;
+esac
 
-if [[ " ${outdoor_scenes[*]} " =~ " ${scene_name} " ]]; then # check if scene is in outdoor_scenes
-    indoor_outdoor_flags="--outdoor"
-elif [[ " ${indoor_scenes[*]} " =~ " ${scene_name} " ]]; then # check if scene is in indoor_scenes
-    indoor_outdoor_flags="--importance_threshold 0.025 --lr_sigma 0.0008 --opacity_lr 0.014 --lambda_normals 0.00004 --lambda_dist 1 --iteration_mesh 5000 --lambda_opacity 0.0055 --lambda_dssim 0.4 --lr_triangles_points_init 0.0015 --lambda_size 5e-8"
-fi
 
-
-python train.py -s $data_folder -m $output_folder --eval --iterations $iterations --max_shapes $cap_max --quiet --eval --test_iterations -1 $indoor_outdoor_flags
+python train.py -s $data_folder -m $output_folder --eval --iterations $iterations --max_shapes $max_shapes --quiet --eval --test_iterations -1 $indoor_outdoor_flags
 python render.py -s $data_folder -m $output_folder --eval --iteration $iterations --quiet --eval --skip_train
 cp -r $output_folder/test/ours_$iterations/renders $output_folder/test_renders
 
